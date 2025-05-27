@@ -1,0 +1,19 @@
+version: '3'
+
+services:
+  web:
+    build: .
+    command: >
+      sh -c "python manage.py migrate &&
+             echo '\033[32m==========================================\033[0m' &&
+             echo '\033[32m   Сервер успешно запущен на порту 8001   \033[0m' &&
+             echo '\033[32m   Перейдите по ссылке:                  \033[0m' &&
+             echo '\033[32m   http://localhost:8001                  \033[0m' &&
+             echo '\033[32m==========================================\033[0m' &&
+             python manage.py runserver 0.0.0.0:8001"
+    volumes:
+      - .:/app
+    ports:
+      - "8001:8001"
+    environment:
+      - DEBUG=1 
