@@ -1,0 +1,147 @@
+{% extends 'forecast/base.html' %}
+{% load forecast_extras %}
+
+{% block title %}Прогноз погоды{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <section class="card weather-card mb-4">
+            <div class="card-body">
+                <h1 class="text-center mb-4">Прогноз погоды</h1>
+                
+                <form method="get" class="mb-4" aria-label="Форма поиска города">
+                    <div class="input-group">
+                        <label for="city-input" class="visually-hidden">Название города</label>
+                        <input type="text" name="city" id="city-input" class="form-control" 
+                               placeholder="Введите название города" value="{{ city_name }}" required>
+                        <button type="submit" class="btn btn-primary">Найти</button>
+                    </div>
+                    {% if last_city and not weather_data %}
+                    <div class="mt-2">
+                        <a href="?city={{ last_city }}" class="text-decoration-none">
+                            Посмотреть погоду в {{ last_city }} снова?
+                        </a>
+                    </div>
+                    {% endif %}
+                </form>
+                
+                {% if weather_data %}
+                <article class="weather-result">
+                    <header>
+                        <h2 class="mb-3">{{ weather_data.city_name }}, {{ weather_data.country }}</h2>
+                    </header>
+                    
+                    <section class="current-weather mb-4">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h3>Текущая погода</h3>
+                                <p class="display-4">{{ weather_data.current.temperature_2m }}{{ weather_data.hourly_units.temperature_2m }}</p>
+                                <dl>
+                                    <dt>Влажность:</dt>
+                                    <dd>{{ weather_data.current.relative_humidity_2m }}%</dd>
+                                    
+                                    <dt>Осадки:</dt>
+                                    <dd>{{ weather_data.current.precipitation }} мм</dd>
+                                    
+                                    <dt>Ветер:</dt>
+                                    <dd>{{ weather_data.current.wind_speed_10m }} км/ч, 
+                                    направление: {{ weather_data.current.wind_direction_10m }}°</dd>
+                                </dl>
+                            </div>
+                        </div>
+                    </section>
+                    
+                    <section>
+                        <h3>Почасовой прогноз</h3>
+                        <div class="hourly-forecast" role="region" aria-label="Почасовой прогноз погоды">
+                            {% for i in "x"|ljust:"24" %}
+                                {% with index=forloop.counter0 %}
+                                <div class="hour-item">
+                                    <time datetime="{{ weather_data.hourly.time|get_item:index }}">
+                                        {{ weather_data.hourly.time|get_item:index|slice:"11:" }}
+                                    </time>
+                                    <p class="h5">{{ weather_data.hourly.temperature_2m|get_item:index }}{{ weather_data.hourly_units.temperature_2m }}</p>
+                                    <dl>
+                                        <dt>Вероятность осадков:</dt>
+                                        <dd>{{ weather_data.hourly.precipitation_probability|get_item:index }}%</dd>
+                                        
+                                        <dt>Ветер:</dt>
+                                        <dd>{{ weather_data.hourly.wind_speed_10m|get_item:index }} км/ч</dd>
+                                    </dl>
+                                </div>
+                                {% endwith %}
+                            {% endfor %}
+                        </div>
+                    </section>
+                </article>
+                {% elif city_name %}
+                <div class="alert alert-warning" role="alert">
+                    Город "{{ city_name }}" не найден. Пожалуйста, проверьте правильность названия.
+                </div>
+                {% endif %}
+            </div>
+        </section>
+        
+        {% if search_history %}
+        <section class="card weather-card">
+            <div class="card-body">
+                <h3>История поисков</h3>
+                <ul class="list-group">
+                    {% for item in search_history %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <a href="?city={{ item.city.name }}" class="text-decoration-none">{{ item.city.name }}</a>
+                        <time datetime="{{ item.search_time|date:'Y-m-d\TH:i:s' }}" class="text-muted">
+                            {{ item.search_time|date:"d.m.Y H:i" }}
+                        </time>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </section>
+        {% endif %}
+        
+        <section class="card weather-card mt-4">
+            <div class="card-body">
+                <h3>Статистика поисков</h3>
+                <div id="stats-container" aria-live="polite">
+                    <p>Загрузка статистики...</p>
+                </div>
+            </div>
+        </section>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+$(document).ready(function() {
+    // Автодополнение для городов
+    $("#city-input").autocomplete({
+        source: function(request, response) {
+            $.getJSON("{% url 'forecast:city_autocomplete' %}", {
+                term: request.term
+            }, response);
+        },
+        minLength: 2
+    });
+    
+    // Загрузка статистики
+    $.getJSON("{% url 'forecast:city_stats' %}", function(data) {
+        let html = '<ul class="list-group">';
+        if (data.length > 0) {
+            data.forEach(function(item) {
+                html += `<li class="list-group-item d-flex justify-content-between align-items-center">
+                    <a href="?city=${item.city}" class="text-decoration-none">${item.city}</a>
+                    <span class="badge bg-primary rounded-pill">${item.count}</span>
+                </li>`;
+            });
+        } else {
+            html += '<li class="list-group-item">Нет данных о поисках</li>';
+        }
+        html += '</ul>';
+        $("#stats-container").html(html);
+    });
+});
+</script>
+{% endblock %}

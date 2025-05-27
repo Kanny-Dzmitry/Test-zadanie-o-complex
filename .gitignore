@@ -1,0 +1,63 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Django
+*.log
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+media/
+staticfiles/
+
+# Виртуальное окружение
+venv/
+env/
+ENV/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Временные файлы
+*.bak
+*.tmp
+*~
+
+# Файлы системы
+.DS_Store
+Thumbs.db
+
+# Файлы конфигурации с секретами
+.env
+*.env
+
+# Кэш и сессии
+__pycache__/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Миграции 
+# */migrations/*.py
+# !*/migrations/__init__.py 
